@@ -9,6 +9,8 @@ public class MapGenerator : MonoBehaviour
 	public enum DrawMode { NoiseMap, ColourMap, Mesh };
 	public DrawMode drawMode;
 
+    public Noise.NormaliseMode normaliseMode;
+
     public const int mapChunkSize = 241;
     [Range(0, 6)]
     public int editorPreviewLOD;
@@ -30,7 +32,7 @@ public class MapGenerator : MonoBehaviour
 	public TerrainType[] terrainTypes;
 
     // MapThreadInfo queues for MapData and MeshData, used to thread through the MapData and MeshData of the generator
-    Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>();
+    Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>(); 
     Queue<MapThreadInfo<MeshData>> meshDataThreadInfoQueue = new Queue<MapThreadInfo<MeshData>>();
 
     public void DrawMapInEditor()
@@ -58,6 +60,7 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
+    // Request map data function, pass through centre vector2 to centrialise the position of the map data and pass callback function to pass on the action function caling MapData
     public void RequestMapData(Vector2 centre, Action<MapData> callback)
     {
         // Create threadstart, this represent the mapDataThread with the callback parameter
@@ -66,10 +69,11 @@ public class MapGenerator : MonoBehaviour
             MapDataThread(centre, callback);
         };
 
-        // Start thread within method
+        // Start thread 
         new Thread(threadStart).Start();
     }
 
+    // Thread function for map data, pass through a Vector2 centre to centre the map position, and pass callback function to pass on the action function calling MapData
     void MapDataThread(Vector2 centre, Action<MapData> callback)
     {
         // Execute GenerateMapData method within the MapDataThread
@@ -82,6 +86,7 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
+    // Request Mesh Data function passing through map date, level of detail (lod) and callback data
     public void RequestMeshData(MapData mapData, int lod, Action<MeshData> callback)
     {
         // Create threadstart, this represent the meshDataThread with the callback parameter
@@ -94,7 +99,8 @@ public class MapGenerator : MonoBehaviour
         new Thread(threadStart).Start();
     }
 
-    public void MeshDataThread(MapData mapData, int lod, Action<MeshData> callback)
+    // Thread mesh data function, pass through map data, level of detail and callback the information passed by the action
+    void MeshDataThread(MapData mapData, int lod, Action<MeshData> callback)
     {
         // Pass heightMap, meshHeightMultipler, meshHeightCurve and levelOfDetail to the MeshGenerator, to be threaded through meshData
         MeshData meshData = MeshGenerator.GenerateTerrainMesh(mapData.heightMap, meshHeightMultiplier, meshHeightCurve, lod);
@@ -112,6 +118,7 @@ public class MapGenerator : MonoBehaviour
         // If mapDataThreadInfoQueue has something in it then loop through all the queue elements
         if (mapDataThreadInfoQueue.Count > 0)
         {
+            // Loop through all the thread elements
             for (int i = 0; i < mapDataThreadInfoQueue.Count; i++)
             {
                 // Thread info is equal to the next thing in the queue
@@ -121,14 +128,15 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
-        // If mapMeshThreadInfoQueue has something in it then loop through all the queue elements
+        // If meshDataThreadInfoQueue has something in it then loop through all the queue elements
         if (meshDataThreadInfoQueue.Count > 0)
         {
+            // Loop through all the thread elements
             for (int i = 0; i < meshDataThreadInfoQueue.Count; i++)
             {
                 // Thread info is equal to the next thing in the queue
                 MapThreadInfo<MeshData> threadInfo = meshDataThreadInfoQueue.Dequeue();
-                // Pass in thread info parameter to callback
+                // Callback parameter in thread 
                 threadInfo.callback(threadInfo.parameter);
             }
         }
@@ -137,7 +145,7 @@ public class MapGenerator : MonoBehaviour
     MapData GenerateMapData(Vector2 centre)
 	{
 		// Call 2d noiseMap from Noise class, passing across all the included parameters.
-		float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre + offset);               
+		float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre + offset, normaliseMode);               
 
         // 1D colourMap array to save all colours used by the terrainTypes
         Color[] colourMap = new Color[mapChunkSize * mapChunkSize];
@@ -148,12 +156,15 @@ public class MapGenerator : MonoBehaviour
 				float currentHeight = noiseMap[x, y];
 				for (int i = 0; i < terrainTypes.Length; i++)
 				{
-					if (currentHeight <= terrainTypes[i].height)
+					if (currentHeight >= terrainTypes[i].height)
 					{
 						// Save colour for current point
 						colourMap[y * mapChunkSize + x] = terrainTypes[i].colour;
-							break;
 					}
+                    else
+                    {
+                        break;
+                    }
 				}
 			}
 		}
@@ -175,7 +186,7 @@ public class MapGenerator : MonoBehaviour
 		}
 	}
 
-    // Store map data in Map Thread Info struct, setting it as a generic struct setting it as T
+    // Generic struct to handle both map data and mesh data
     struct MapThreadInfo<T>
     {
         // Readonly declaration used because structs are unmuteable, meaning that the values of the variables can't be changed
@@ -191,6 +202,7 @@ public class MapGenerator : MonoBehaviour
     }
 }
 
+// TerrainType struct: used to allow for terraintypes to be named, have a set height and a set colour
 [System.Serializable]
 public struct TerrainType
 {

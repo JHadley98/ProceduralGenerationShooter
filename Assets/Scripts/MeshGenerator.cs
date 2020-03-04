@@ -24,9 +24,9 @@ public static class MeshGenerator
         int vertexIndex = 0;
 
         // Loop through heightMap
-        for (int y = 0; y < height; y+= meshSimplificationIncrement)
+        for (int y = 0; y < height; y += meshSimplificationIncrement)
         {
-            for (int x = 0; x < width; x+= meshSimplificationIncrement)
+            for (int x = 0; x < width; x += meshSimplificationIncrement)
             {
                 // Calculate triangle vertices within a new Vector3
                 meshData.vertices[vertexIndex] = new Vector3(topLeftX + x, heightCurve.Evaluate(heightMap[x, y]) * heightMultiplier, topLeftZ - y);
