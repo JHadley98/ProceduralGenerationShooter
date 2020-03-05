@@ -216,7 +216,7 @@ public class EndlessTerrain : MonoBehaviour
 							lodMesh.RequestMesh(mapData);
 						}
 					}
-
+                    // If terrain chunk is visible add itself to the list, using the 'this' key word
 					terrainChunksVisibleLastUpdate.Add(this);
 				}
 				// Update to determine if the terrain chunk is visible

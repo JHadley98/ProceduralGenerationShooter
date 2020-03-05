@@ -6,12 +6,13 @@ using UnityEngine;
 
 public class MapGenerator : MonoBehaviour
 {
-	public enum DrawMode { NoiseMap, ColourMap, Mesh };
+    // Public variables:
+	public enum DrawMode { NoiseMap, ColourMap, Mesh, FalloffMap };
 	public DrawMode drawMode;
 
     public Noise.NormaliseMode normaliseMode;
 
-    public const int mapChunkSize = 241;
+    public const int mapChunkSize = 239;
     [Range(0, 6)]
     public int editorPreviewLOD;
     public float noiseScale;
@@ -24,6 +25,8 @@ public class MapGenerator : MonoBehaviour
 	public int seed;
 	public Vector2 offset;
 
+    public bool useFalloff;
+
     public float meshHeightMultiplier;
     public AnimationCurve meshHeightCurve;
 
@@ -31,9 +34,16 @@ public class MapGenerator : MonoBehaviour
 
 	public TerrainType[] terrainTypes;
 
+    float[,] fallofMap;
+
     // MapThreadInfo queues for MapData and MeshData, used to thread through the MapData and MeshData of the generator
     Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>(); 
     Queue<MapThreadInfo<MeshData>> meshDataThreadInfoQueue = new Queue<MapThreadInfo<MeshData>>();
+
+    void Awake()
+    {
+        fallofMap = FalloffGenerator.GenerateFalloffMap(mapChunkSize);
+    }
 
     public void DrawMapInEditor()
     {
@@ -58,6 +68,11 @@ public class MapGenerator : MonoBehaviour
         {
             display.DrawMesh(MeshGenerator.GenerateTerrainMesh(mapData.heightMap, meshHeightMultiplier, meshHeightCurve, editorPreviewLOD), TextureGenerator.TextureFromColourMap(mapData.colourMap, mapChunkSize, mapChunkSize));
         }
+        else if (drawMode == DrawMode.FalloffMap)
+        {
+            display.DrawTexture(TextureGenerator.TextureFromHeightMap(FalloffGenerator.GenerateFalloffMap(mapChunkSize)));
+        }
+
     }
 
     // Request map data function, pass through centre vector2 to centrialise the position of the map data and pass callback function to pass on the action function caling MapData
@@ -145,7 +160,7 @@ public class MapGenerator : MonoBehaviour
     MapData GenerateMapData(Vector2 centre)
 	{
 		// Call 2d noiseMap from Noise class, passing across all the included parameters.
-		float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre + offset, normaliseMode);               
+		float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize + 2, mapChunkSize + 2, seed, noiseScale, octaves, persistance, lacunarity, centre + offset, normaliseMode);               
 
         // 1D colourMap array to save all colours used by the terrainTypes
         Color[] colourMap = new Color[mapChunkSize * mapChunkSize];
@@ -153,6 +168,10 @@ public class MapGenerator : MonoBehaviour
 		{
 			for (int x = 0; x < mapChunkSize; x++)
 			{
+                if(useFalloff)
+                {
+                    noiseMap[x, y] = Mathf.Clamp01(noiseMap[x, y] - fallofMap[x, y]);
+                }
 				float currentHeight = noiseMap[x, y];
 				for (int i = 0; i < terrainTypes.Length; i++)
 				{
@@ -184,6 +203,8 @@ public class MapGenerator : MonoBehaviour
 		{
 			octaves = 0;
 		}
+
+        fallofMap = FalloffGenerator.GenerateFalloffMap(mapChunkSize);
 	}
 
     // Generic struct to handle both map data and mesh data

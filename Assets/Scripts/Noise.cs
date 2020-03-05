@@ -16,7 +16,7 @@ public static class Noise
 		// Vector2 octaveOffsets array set to octaves
 		Vector2[] octaveOffsets = new Vector2[octaves];
 
-		float maxPosibleHeight = 0;
+		float maxPossibleHeight = 0;
 		float amplitude = 1;
 		float frequency = 1;
 
@@ -27,7 +27,7 @@ public static class Noise
 			float offsetY = prng.Next(-100000, 100000) - offset.y;
 			octaveOffsets[i] = new Vector2(offsetX, offsetY);
 
-			maxPosibleHeight += amplitude;
+			maxPossibleHeight += amplitude;
 
 			// persistance value is in the range 0 to 1, so that decreases each octave
 			amplitude *= persistance;
@@ -93,19 +93,21 @@ public static class Noise
 		{
 			for (int x = 0; x < mapWidth; x++)
 			{
+                // If normaliseMode equals normal then the entire map can be generated at one knowing the min and max noiseheight values
 				if(normaliseMode == NormaliseMode.Local)
 				{
 					noiseMap[x, y] = Mathf.InverseLerp(minLocalNoiseHeight, maxLocalNoiseHeight, noiseMap[x, y]);
 				}
+                // Else generate the chunk by chunk by estimating the max possible height of the noiseMap
 				else
 				{
-					float normalisedHeight = noiseMap[x, y] + 1 / (maxPosibleHeight);
-					noiseMap[x, y] = Mathf.Clamp(normalisedHeight, 0, int.MaxValue);
+					float normalisedHeight = noiseMap[x, y] + 1 / (maxPossibleHeight);
+                    // Clamp noiseMap to normalisedHeight on X axis, y to 0 and z axis to the max int value
+                    noiseMap[x, y] = Mathf.Clamp(normalisedHeight, 0, int.MaxValue);
 				}
 			}
 		}
 
 		return noiseMap;
 	}
-
 }
