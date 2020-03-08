@@ -1,16 +1,17 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using UnityEngine;
+using System.Collections;
 using System;
 using System.Threading;
-using UnityEngine;
+using System.Collections.Generic;
 
 public class MapGenerator : MonoBehaviour
 {
-    // Public variables:
-	public enum DrawMode { NoiseMap, ColourMap, Mesh, FalloffMap };
-	public DrawMode drawMode;
 
-    public Noise.NormaliseMode normaliseMode;
+    // Public variables:
+    public enum DrawMode { NoiseMap, ColourMap, Mesh, FalloffMap };
+    public DrawMode drawMode;
+
+    public Noise.NormaliseMode normalizeMode;
 
     public const int mapChunkSize = 239;
     [Range(0, 6)]
@@ -18,12 +19,12 @@ public class MapGenerator : MonoBehaviour
     public float noiseScale;
 
     public int octaves;
-	[Range(0, 1)]
-	public float persistance;
-	public float lacunarity;
+    [Range(0, 1)]
+    public float persistance;
+    public float lacunarity;
 
-	public int seed;
-	public Vector2 offset;
+    public int seed;
+    public Vector2 offset;
 
     public bool useFalloff;
 
@@ -32,23 +33,21 @@ public class MapGenerator : MonoBehaviour
 
     public bool autoUpdate;
 
-	public TerrainType[] terrainTypes;
+    public TerrainType[] terrainTypes;
 
-    float[,] fallofMap;
-
+    float[,] falloffMap;
     // MapThreadInfo queues for MapData and MeshData, used to thread through the MapData and MeshData of the generator
-    Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>(); 
+    Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>();
     Queue<MapThreadInfo<MeshData>> meshDataThreadInfoQueue = new Queue<MapThreadInfo<MeshData>>();
 
     void Awake()
     {
-        fallofMap = FalloffGenerator.GenerateFalloffMap(mapChunkSize);
+        falloffMap = FalloffGenerator.GenerateFalloffMap(mapChunkSize);
     }
 
     public void DrawMapInEditor()
     {
         MapData mapData = GenerateMapData(Vector2.zero);
-
         // Reference to MapDisplay class
         MapDisplay display = FindObjectOfType<MapDisplay>();
 
@@ -61,18 +60,21 @@ public class MapGenerator : MonoBehaviour
         // Else if DrawMode is equal to ColourMap, use ColourMap
         else if (drawMode == DrawMode.ColourMap)
         {
-            // Draw colourMap
+            // Display colourMap
             display.DrawTexture(TextureGenerator.TextureFromColourMap(mapData.colourMap, mapChunkSize, mapChunkSize));
         }
+        // Else if DrawMode is equal to mesh, use Mesh
         else if (drawMode == DrawMode.Mesh)
         {
+            // Display mesh using texture generator
             display.DrawMesh(MeshGenerator.GenerateTerrainMesh(mapData.heightMap, meshHeightMultiplier, meshHeightCurve, editorPreviewLOD), TextureGenerator.TextureFromColourMap(mapData.colourMap, mapChunkSize, mapChunkSize));
         }
+        // Else if DrawMode is equal to mesh, use FalloffMap		
         else if (drawMode == DrawMode.FalloffMap)
         {
+            // Diplay falloff map
             display.DrawTexture(TextureGenerator.TextureFromHeightMap(FalloffGenerator.GenerateFalloffMap(mapChunkSize)));
         }
-
     }
 
     // Request map data function, pass through centre vector2 to centrialise the position of the map data and pass callback function to pass on the action function caling MapData
@@ -83,7 +85,6 @@ public class MapGenerator : MonoBehaviour
         {
             MapDataThread(centre, callback);
         };
-
         // Start thread 
         new Thread(threadStart).Start();
     }
@@ -93,7 +94,7 @@ public class MapGenerator : MonoBehaviour
     {
         // Execute GenerateMapData method within the MapDataThread
         MapData mapData = GenerateMapData(centre);
-        // Lock allows it so that when one thread reaches this point, while it's executing this code no other thread can execute as well, it will have to wait its turn
+        // Lock allows it so that when one thread reaches this point, while it's executing this code no other thread can execute as well, it will have to wait its turn		
         lock (mapDataThreadInfoQueue)
         {
             // Create new info queue passing callBack and mapData
@@ -105,8 +106,7 @@ public class MapGenerator : MonoBehaviour
     public void RequestMeshData(MapData mapData, int lod, Action<MeshData> callback)
     {
         // Create threadstart, this represent the meshDataThread with the callback parameter
-        ThreadStart threadStart = delegate 
-        {
+        ThreadStart threadStart = delegate {
             MeshDataThread(mapData, lod, callback);
         };
 
@@ -119,7 +119,6 @@ public class MapGenerator : MonoBehaviour
     {
         // Pass heightMap, meshHeightMultipler, meshHeightCurve and levelOfDetail to the MeshGenerator, to be threaded through meshData
         MeshData meshData = MeshGenerator.GenerateTerrainMesh(mapData.heightMap, meshHeightMultiplier, meshHeightCurve, lod);
-
         // Lock allows it so that when one thread reaches this point, while it's executing this code no other thread can execute as well, it will have to wait its turn
         lock (meshDataThreadInfoQueue)
         {
@@ -158,54 +157,57 @@ public class MapGenerator : MonoBehaviour
     }
 
     MapData GenerateMapData(Vector2 centre)
-	{
-		// Call 2d noiseMap from Noise class, passing across all the included parameters.
-		float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize + 2, mapChunkSize + 2, seed, noiseScale, octaves, persistance, lacunarity, centre + offset, normaliseMode);               
+    {
+        // Call 2d noiseMap from Noise class, passing across all the included parameters.	
+        float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize + 2, mapChunkSize + 2, seed, noiseScale, octaves, persistance, lacunarity, centre + offset, normalizeMode);
 
         // 1D colourMap array to save all colours used by the terrainTypes
         Color[] colourMap = new Color[mapChunkSize * mapChunkSize];
-		for (int y = 0; y < mapChunkSize; y++)
-		{
-			for (int x = 0; x < mapChunkSize; x++)
-			{
-                if(useFalloff)
+        // Loop through chunk size for falloff map
+        for (int y = 0; y < mapChunkSize; y++)
+        {
+            for (int x = 0; x < mapChunkSize; x++)
+            {
+                if (useFalloff)
                 {
-                    noiseMap[x, y] = Mathf.Clamp01(noiseMap[x, y] - fallofMap[x, y]);
+                    noiseMap[x, y] = Mathf.Clamp01(noiseMap[x, y] - falloffMap[x, y]);
                 }
-				float currentHeight = noiseMap[x, y];
-				for (int i = 0; i < terrainTypes.Length; i++)
-				{
-					if (currentHeight >= terrainTypes[i].height)
-					{
-						// Save colour for current point
-						colourMap[y * mapChunkSize + x] = terrainTypes[i].colour;
-					}
+                float currentHeight = noiseMap[x, y];
+
+                // Loop through terrainType heights
+                for (int i = 0; i < terrainTypes.Length; i++)
+                {
+                    if (currentHeight >= terrainTypes[i].height)
+                    {
+                        // Save colour for current point
+                        colourMap[y * mapChunkSize + x] = terrainTypes[i].colour;
+                    }
                     else
                     {
                         break;
                     }
-				}
-			}
-		}
+                }
+            }
+        }
 
         return new MapData(noiseMap, colourMap);
-	}
+    }
 
-	void OnValidate()
-	{
-		// Clamp values to 1 if the value becomes less than one.
-		if (lacunarity < 1)
-		{
-			lacunarity = 1;
-		}
-		// Clamp octaves to 0 if the values become less than 0.
-		if (octaves < 0)
-		{
-			octaves = 0;
-		}
+    void OnValidate()
+    {
+        // Clamp values to 1 if the value becomes less than one.
+        if (lacunarity < 1)
+        {
+            lacunarity = 1;
+        }
+        // Clamp octaves to 0 if the values become less than 0.
+        if (octaves < 0)
+        {
+            octaves = 0;
+        }
 
-        fallofMap = FalloffGenerator.GenerateFalloffMap(mapChunkSize);
-	}
+        falloffMap = FalloffGenerator.GenerateFalloffMap(mapChunkSize);
+    }
 
     // Generic struct to handle both map data and mesh data
     struct MapThreadInfo<T>
@@ -221,15 +223,16 @@ public class MapGenerator : MonoBehaviour
             this.parameter = parameter;
         }
     }
+
 }
 
 // TerrainType struct: used to allow for terraintypes to be named, have a set height and a set colour
 [System.Serializable]
 public struct TerrainType
 {
-	public string name;
-	public float height;
-	public Color colour;
+    public string name;
+    public float height;
+    public Color colour;
 }
 
 public struct MapData
@@ -237,7 +240,7 @@ public struct MapData
     // Readonly declaration used because structs are unmuteable, meaning that the values of the variables can't be changed
     public readonly float[,] heightMap;
     public readonly Color[] colourMap;
-    
+
     // Constructor for MapData, passing through heightMap and colourMap
     public MapData(float[,] heightMap, Color[] colourMap)
     {

@@ -6,15 +6,17 @@ public static class FalloffGenerator
 {
     public static float[,] GenerateFalloffMap(int size)
     {
+        // Create map with dimensions given from the size defined
         float[,] map = new float[size, size];
-
+        
+        // For loop to populate the map values
         for (int i = 0; i < size; i++)
         {
             for (int j = 0; j < size; j++)
             {
-                // i & j used for coordinates in a point in the square, set between the range -1 to 1
-                float x = i / (float)size * 2 - 1;
-                float y = j / (float)size * 2 - 1;
+                // i & j used for coordinates as a point in the square, set in the range -1 to 1
+                float x = (i / (float)size * 2) - 1;
+                float y = (j / (float)size * 2) - 1;
 
                 float value = Mathf.Max(Mathf.Abs(x), Mathf.Abs(y));
                 map[i, j] = Evaluate(value);
