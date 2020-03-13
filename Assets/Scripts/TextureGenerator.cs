@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public static class TextureGenerator
 {
@@ -9,12 +7,10 @@ public static class TextureGenerator
     {
         // Set new Texture2D to equal width and height
         Texture2D texture = new Texture2D(width, height);
-        
         // Fix blurr of textures
         texture.filterMode = FilterMode.Point;
         // Fix texture wrapping
         texture.wrapMode = TextureWrapMode.Clamp;
-
         // Set and apply colourMap to texture
         texture.SetPixels(colourMap);
         texture.Apply();
@@ -27,12 +23,9 @@ public static class TextureGenerator
         // Set width and height to equal the noiseMap
         int width = heightMap.GetLength(0);
         int height = heightMap.GetLength(1);
-           
+
         // Set colour array
         Color[] colourMap = new Color[width * height];
-
-        float[,] data = new float[width, height];
-
         // Loop through values in noiseMap
         for (int y = 0; y < height; y++)
         {
@@ -44,4 +37,5 @@ public static class TextureGenerator
 
         return TextureFromColourMap(colourMap, width, height);
     }
+
 }
