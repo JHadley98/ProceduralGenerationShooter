@@ -2,14 +2,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class HeightMapGenerator : MonoBehaviour
+public static class HeightMapGenerator
 {
+	// Generate height map method
 	public static HeightMap GenerateHeightMap(int width, int height, HeightMapSettings settings, Vector2 sampleCentre)
 	{
+		// 2D float array used for the values for the noise map
 		float[,] values = Noise.GenerateNoiseMap(width, height, settings.noiseSettings, sampleCentre);
 
 		AnimationCurve heightCurve_threadSafe = new AnimationCurve(settings.heightCurve.keys);
 
+		// Declare min and max value possible for height map
 		float minValue = float.MaxValue;
 		float maxValue = float.MinValue;
 
@@ -20,15 +23,12 @@ public class HeightMapGenerator : MonoBehaviour
 			{
 				values[i, j] *= heightCurve_threadSafe.Evaluate(values[i, j]) * settings.heightMultiplier;
 
-				if (values[i, j] > maxValue)
+				// If values is more than or less than either maxValue or minValue set both maxValue and minValue to equal values
+				if (values[i, j] > maxValue || values[i, j] < minValue)
 				{
 					maxValue = values[i, j];
-				}
-				if (values[i, j] < minValue)
-				{
 					minValue = values[i, j];
 				}
-
 			}
 		}
 
@@ -40,14 +40,14 @@ public struct HeightMap
 {
 	// Readonly declaration used because structs are unmuteable, meaning that the values of the variables can't be changed
 	public readonly float[,] values;
-	public readonly float minValues;
-	public readonly float maxValues;
+	public readonly float minValue;
+	public readonly float maxValue;
 
 	// Constructor for MapData, passing through heightMap and colourMap
-	public HeightMap(float[,] values, float minValues, float maxValues)
+	public HeightMap(float[,] values, float minValue, float maxValue)
 	{
 		this.values = values;
-		this.minValues = minValues;
-		this.maxValues = maxValues;
+		this.minValue = minValue;
+		this.maxValue = maxValue;
 	}
 }

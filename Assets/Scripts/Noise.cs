@@ -29,11 +29,6 @@ public static class Noise
             amplitude *= noiseSettings.persistance;
         }
 
-        if (noiseSettings.scale <= 0)
-        {
-            noiseSettings.scale = 0.0001f;
-        }
-
         // Set float values outside of for loop
         float maxLocalNoiseHeight = float.MinValue;
         float minLocalNoiseHeight = float.MaxValue;
@@ -81,7 +76,7 @@ public static class Noise
                 // Set noiseMap x, y to equal noiseHeight
                 noiseMap[x, y] = noiseHeight;
 
-                if (noiseSettings.normalizeMode == NormaliseMode.Global)
+                if (noiseSettings.normaliseMode == NormaliseMode.Global)
                 {
                     // Global normalisation
                     float normalizedHeight = (noiseMap[x, y] + 1) / (maxPossibleHeight / 0.9f);
@@ -91,7 +86,7 @@ public static class Noise
             }
         }
 
-        if (noiseSettings.normalizeMode == NormaliseMode.Local)
+        if (noiseSettings.normaliseMode == NormaliseMode.Local)
         {
             // For loop to normalise noiseMap
             for (int y = 0; y < mapHeight; y++)
@@ -106,29 +101,33 @@ public static class Noise
         }
         return noiseMap;
     }
+}
 
+[System.Serializable]
+public class NoiseSettings
+{
+    public Noise.NormaliseMode normaliseMode;
 
-    [System.Serializable]
-    public class NoiseSettings
+    public float scale = 50;
+
+    public int octaves = 6;
+    [Range(0, 1)]
+    public float persistance = .6f;
+    public float lacunarity = 2;
+
+    public int seed;
+    public Vector2 offset;
+
+    // Function to declare validated values 
+    public void ValidateValues()
     {
-        public Noise.NormaliseMode normalizeMode;
-
-        public float scale = 50;
-
-        public int octaves = 6;
-        [Range(0, 1)]
-        public float persistance = .6f;
-        public float lacunarity = 2;
-
-        public int seed;
-        public Vector2 offset;
-
-        public void ValidateValues()
-        {
-            scale = Mathf.Max(scale, 0.01f);
-            octaves = Mathf.Max(octaves, 1);
-            lacunarity = Mathf.Max(lacunarity, 1);
-            persistance = Mathf.Clamp01(persistance);
-        }
+        // Max function used to choose whichever is greater, so if the scale is less than 0.01 then the value will be set to 0.01
+        // The max function will be apply the same functions to octaves and lacunarity
+        scale = Mathf.Max(scale, 0.01f);
+        scale = Mathf.Max(scale, 0.01f);
+        octaves = Mathf.Max(octaves, 1);
+        lacunarity = Mathf.Max(lacunarity, 1);
+        // Clamp persistance between 0 and 1
+        persistance = Mathf.Clamp01(persistance);
     }
 }

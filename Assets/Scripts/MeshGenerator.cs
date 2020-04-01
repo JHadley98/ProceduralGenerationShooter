@@ -60,7 +60,7 @@ public static class MeshGenerator
 				// Calculate percent for uvs, looking at the left most side of the map and right most side of the map, looking at the mesh size
 				// Take meshSimplificationIncrement from X and Y to ensure the uvs stay centre
 				Vector2 percent = new Vector2((x - meshSimplificationIncrement) / (float)meshSize, (y - meshSimplificationIncrement) / (float)meshSize);
-				// Height equation
+				// Set height equal to heightMap
 				float height = heightMap[x, y];
 				// Vertex position array - calculate X and Z values for mesh size
 				Vector3 vertexPosition = new Vector3((topLeftX + percent.x * meshSizeUnsimplified) * meshSettings.meshScale, height, (topLeftZ - percent.y * meshSizeUnsimplified) * meshSettings.meshScale);

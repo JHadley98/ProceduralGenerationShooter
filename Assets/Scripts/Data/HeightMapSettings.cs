@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
-using System.Collections;
 
-/* This class is used to store the data for the noiseMap */
-
+/* Class to store all the data for the height map settings
+ * Storing the noise settings, falloff, height multipler and height curve 
+ */
 [CreateAssetMenu()]
 public class HeightMapSettings : UpdatableData
 {
@@ -10,10 +10,11 @@ public class HeightMapSettings : UpdatableData
 
 	public bool useFalloff;
 
+	// Scales on the Y axis
 	public float heightMultiplier;
 	public AnimationCurve heightCurve;
 
-	// Minimum height of terrain
+	// Create accessor for both minimum and maximum height for the terrain
 	public float minHeight
 	{
 		get
@@ -22,7 +23,6 @@ public class HeightMapSettings : UpdatableData
 		}
 	}
 
-	// Maximum height of terrain
 	public float maxHeight
 	{
 		get
@@ -31,6 +31,7 @@ public class HeightMapSettings : UpdatableData
 		}
 	}
 
+	// Only compile the code below when in the unity editor
 #if UNITY_EDITOR
 
 	protected override void OnValidate()
