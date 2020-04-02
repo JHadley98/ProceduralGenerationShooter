@@ -6,6 +6,8 @@
 [CreateAssetMenu()]
 public class HeightMapSettings : UpdatableData
 {
+	Terrain terrain;
+
 	public NoiseSettings noiseSettings;
 
 	public bool useFalloff;

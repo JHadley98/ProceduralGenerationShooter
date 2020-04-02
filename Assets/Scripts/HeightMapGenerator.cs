@@ -4,6 +4,24 @@ using UnityEngine;
 
 public static class HeightMapGenerator
 {
+	/*	TerrainData terrainData;
+
+		public void RandomTerrain()
+		{
+			float[,] heightMap = terrainData.GetHeights(0, 0, terrainData.heightmapWidth, terrainData.heightmapHeight);
+
+			for (int x = 0; x < terrainData.heightmapWidth; x++)
+			{
+				for (int y = 0; y < terrainData.heightmapHeight; y++)
+				{
+					heightMap[x, y] = UnityEngine.Random.Range(randomHeightRange.x, randomHeightRange.y);
+
+				}
+			}
+			terrainData.SetHeights(0, 0, heightMap);
+		}
+	*/
+
 	// Generate height map method
 	public static HeightMap GenerateHeightMap(int width, int height, HeightMapSettings settings, Vector2 sampleCentre)
 	{
